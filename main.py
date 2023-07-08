@@ -25,7 +25,7 @@ async def main():
     # define command line params ...
     parser = argparse.ArgumentParser(description='Media crawler program.')
     parser.add_argument('--platform', type=str, help='Media platform select (xhs|dy)...', default=config.PLATFORM)
-    parser.add_argument('--lt', type=str, help='Login type (qrcode | phone | cookie)', default=config.LOGIN_TYPE)
+    parser.add_argument('--lt', type=str, help='Login type (qrcode | phone | cookies)', default=config.LOGIN_TYPE)
 
     # init account pool
     account_pool = proxy_account_pool.create_account_pool()
@@ -34,7 +34,7 @@ async def main():
     crawler = CrawlerFactory().create_crawler(platform=args.platform)
     crawler.init_config(
         command_args=args,
-        account_pool=account_pool
+        account_pool=account_pool,
     )
     await crawler.start()
 

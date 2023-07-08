@@ -1,6 +1,7 @@
 import random
 import asyncio
 import logging
+import json
 from asyncio import Task
 from typing import Optional, List, Dict, Tuple
 from argparse import Namespace
@@ -30,7 +31,7 @@ class XiaoHongShuCrawler(AbstractCrawler):
         self.index_url = "https://www.xiaohongshu.com"
         self.command_args: Optional[Namespace] = None
         self.account_pool: Optional[AccountPool] = None
-
+        
     def init_config(self, **kwargs):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -100,15 +101,38 @@ class XiaoHongShuCrawler(AbstractCrawler):
             )
 
             # Search for notes and retrieve their comment information.
-            await self.search_posts()
+            # await self.search_posts()
+            await self.search_posts_and_save()
 
             # block main crawler coroutine
-            await asyncio.Event().wait()
+            # await asyncio.Event().wait()
 
     async def close(self):
         await self.browser_context.close()
         await self.browser_context.close()
         logging.info("Browser context closed ...")
+    
+    async def search_posts_and_save(self):
+        print("Begin search xiaohongshu keywords")
+        # It is possible to modify the source code to allow for the passing of a batch of keywords.
+        note_meta = []
+        max_note_len = config.max_note_len
+        page_size = 20
+        max_page = max_note_len // page_size
+        keyword = config.KEYWORDS.split(",")[0]
+        for page in range(1, max_page + 1):
+            posts_res = await self.xhs_client.get_note_by_keyword(
+                keyword=keyword,
+                page=page,
+            )
+            await asyncio.sleep(0.05)
+            posts = posts_res.get("items")
+            note_meta.extend(posts)
+            print(f'page {page} get {len(posts)} posts, total {len(note_meta)} posts')
+            if not posts_res:
+                continue
+        print(f'Save note meta to {config.output_path}')
+        json.dump(note_meta, open(config.output_path, "w", encoding="utf-8"), ensure_ascii=False, indent=4)
 
     async def search_posts(self):
         logging.info("Begin search xiaohongshu keywords")
